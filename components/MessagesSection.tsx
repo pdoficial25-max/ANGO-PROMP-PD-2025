@@ -1,0 +1,211 @@
+
+import React, { useState, useRef, useEffect } from 'react';
+import { User, PrivateMessage, UserRole } from '../types';
+import { Search, Send, MoreVertical, Phone, Video, Info, ShieldCheck, CheckCheck, MessageSquare, ChevronLeft } from 'lucide-react';
+
+interface MessagesSectionProps {
+  currentUser: User;
+  initialTargetUserId?: string | null;
+}
+
+const MOCK_USERS: User[] = [
+  { id: 'admin', name: 'Admin ANGO', email: 'admin@ango.com', role: UserRole.ADMIN, avatar: 'https://picsum.photos/seed/admin/100', followingIds: [], isMentor: true },
+  { id: 'u2', name: 'Marta Silva', email: 'marta@email.com', role: UserRole.PREMIUM, avatar: 'https://picsum.photos/seed/marta/100', followingIds: [] },
+  { id: 'u3', name: 'João Pereira', email: 'joao@email.com', role: UserRole.MEMBER, avatar: 'https://picsum.photos/seed/joao/100', followingIds: [] },
+  { id: 'u4', name: 'Carla Dias', email: 'carla@email.com', role: UserRole.PREMIUM, avatar: 'https://picsum.photos/seed/carla/100', followingIds: [], isMentor: true },
+];
+
+const MessagesSection: React.FC<MessagesSectionProps> = ({ currentUser, initialTargetUserId }) => {
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(initialTargetUserId || null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [messageText, setMessageText] = useState('');
+  const [messages, setMessages] = useState<PrivateMessage[]>([
+    { id: 'm1', senderId: 'admin', receiverId: currentUser.id, text: 'Olá! Como vai o teu progresso com o novo prompt?', timestamp: Date.now() - 3600000, isRead: true },
+    { id: 'm2', senderId: currentUser.id, receiverId: 'admin', text: 'Está a correr muito bem, obrigado pela ajuda!', timestamp: Date.now() - 1800000, isRead: true },
+  ]);
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (initialTargetUserId) {
+      setSelectedUserId(initialTargetUserId);
+    }
+  }, [initialTargetUserId]);
+
+  useEffect(() => {
+    if (selectedUserId) {
+      scrollToBottom();
+    }
+  }, [messages, selectedUserId]);
+
+  const selectedUser = MOCK_USERS.find(u => u.id === selectedUserId);
+  
+  const chatMessages = messages.filter(m => 
+    (m.senderId === currentUser.id && m.receiverId === selectedUserId) ||
+    (m.senderId === selectedUserId && m.receiverId === currentUser.id)
+  ).sort((a, b) => a.timestamp - b.timestamp);
+
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!messageText.trim() || !selectedUserId) return;
+
+    const newMessage: PrivateMessage = {
+      id: Math.random().toString(36).substr(2, 9),
+      senderId: currentUser.id,
+      receiverId: selectedUserId,
+      text: messageText,
+      timestamp: Date.now(),
+      isRead: false
+    };
+
+    setMessages([...messages, newMessage]);
+    setMessageText('');
+  };
+
+  const filteredUsers = MOCK_USERS.filter(u => 
+    u.id !== currentUser.id && 
+    u.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="flex h-full max-w-7xl mx-auto w-full md:px-4 md:pb-6 gap-4 animate-in fade-in duration-500 overflow-hidden">
+      {/* Contact List Sidebar */}
+      <div className={`
+        ${selectedUserId ? 'hidden md:flex' : 'flex'} 
+        w-full md:w-80 lg:w-96 flex flex-col bg-[#141414] border-r md:border border-white/5 md:rounded-[32px] overflow-hidden shrink-0
+      `}>
+        <div className="p-6 border-b border-white/5">
+          <h2 className="text-xl font-black text-white uppercase tracking-tight mb-4">Mensagens</h2>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600" size={16} />
+            <input 
+              type="text" 
+              placeholder="Procurar membro ou mentor..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white/5 border border-white/5 rounded-xl pl-10 pr-4 py-3 text-xs text-white focus:outline-none focus:border-red-600/30 transition-all placeholder:text-gray-700"
+            />
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-1">
+          {filteredUsers.length > 0 ? filteredUsers.map(user => (
+            <button
+              key={user.id}
+              onClick={() => setSelectedUserId(user.id)}
+              className={`w-full flex items-center gap-3 p-4 rounded-2xl transition-all ${selectedUserId === user.id ? 'bg-red-600 text-white shadow-xl shadow-red-600/20' : 'hover:bg-white/5 text-gray-400'}`}
+            >
+              <div className="relative shrink-0">
+                <img src={user.avatar} className="w-12 h-12 rounded-xl object-cover border border-white/10" alt={user.name} />
+                <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#141414] rounded-full"></span>
+              </div>
+              <div className="text-left overflow-hidden">
+                <div className="flex items-center gap-1.5">
+                  <p className={`text-[12px] font-black uppercase truncate ${selectedUserId === user.id ? 'text-white' : 'text-gray-200'}`}>{user.name}</p>
+                  {user.isMentor && <ShieldCheck size={14} className={selectedUserId === user.id ? 'text-white' : 'text-red-500'} />}
+                </div>
+                <p className={`text-[10px] font-bold truncate mt-0.5 ${selectedUserId === user.id ? 'text-white/60' : 'text-gray-600'}`}>
+                  {user.isMentor ? 'Mentor Estratégico' : 'Membro de Elite'}
+                </p>
+              </div>
+            </button>
+          )) : (
+            <div className="text-center py-10 opacity-30">
+              <MessageSquare size={32} className="mx-auto mb-2" />
+              <p className="text-[10px] font-black uppercase tracking-widest">Nenhum contacto encontrado</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Chat Window */}
+      <div className={`
+        ${selectedUserId ? 'flex' : 'hidden md:flex'} 
+        flex-1 flex-col bg-[#141414] border-white/5 md:border md:rounded-[32px] overflow-hidden relative
+      `}>
+        {selectedUser ? (
+          <>
+            {/* Header */}
+            <div className="p-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setSelectedUserId(null)} 
+                  className="md:hidden p-2 -ml-2 text-gray-400 hover:text-white"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <img src={selectedUser.avatar} className="w-10 h-10 rounded-xl object-cover" alt={selectedUser.name} />
+                <div>
+                  <p className="text-sm font-black text-white uppercase">{selectedUser.name}</p>
+                  <p className="text-[9px] text-green-500 font-black uppercase tracking-widest">Ativo agora</p>
+                </div>
+              </div>
+              <div className="hidden sm:flex items-center gap-1 md:gap-2">
+                <button className="p-2 text-gray-500 hover:text-white transition-colors"><Phone size={18} /></button>
+                <button className="p-2 text-gray-500 hover:text-white transition-colors"><Video size={18} /></button>
+                <button className="p-2 text-gray-500 hover:text-white transition-colors"><Info size={18} /></button>
+                <button className="p-2 text-gray-500 hover:text-white transition-colors"><MoreVertical size={18} /></button>
+              </div>
+            </div>
+
+            {/* Message Feed */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 custom-scrollbar bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')]">
+              <div className="text-center py-4">
+                <span className="px-4 py-1.5 bg-white/5 rounded-full text-[9px] font-black text-gray-600 uppercase tracking-widest border border-white/5">Hoje</span>
+              </div>
+              
+              {chatMessages.map(msg => (
+                <div key={msg.id} className={`flex ${msg.senderId === currentUser.id ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                  <div className={`max-w-[85%] md:max-w-[70%] ${msg.senderId === currentUser.id ? 'bg-red-600 text-white rounded-[24px] rounded-tr-none' : 'bg-white/5 text-gray-200 border border-white/10 rounded-[24px] rounded-tl-none'} p-4 shadow-xl`}>
+                    <p className="text-[13px] md:text-[14px] leading-relaxed">{msg.text}</p>
+                    <div className="flex items-center justify-end gap-1.5 mt-2">
+                      <span className={`text-[9px] font-black uppercase ${msg.senderId === currentUser.id ? 'text-white/60' : 'text-gray-600'}`}>
+                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      {msg.senderId === currentUser.id && <CheckCheck size={14} className="text-white/40" />}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Bar */}
+            <form onSubmit={handleSendMessage} className="p-4 bg-[#0a0a0a] border-t border-white/5">
+              <div className="relative flex items-center gap-3 bg-white/5 rounded-2xl p-2 border border-white/5 focus-within:border-red-600/30 transition-all">
+                <input 
+                  type="text" 
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  placeholder="Mensagem privada..."
+                  className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-white placeholder:text-gray-700 px-4 py-2"
+                />
+                <button 
+                  type="submit"
+                  disabled={!messageText.trim()}
+                  className="w-10 h-10 md:w-12 md:h-12 bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-xl flex items-center justify-center transition-all shadow-lg shadow-red-600/20 text-white shrink-0 active:scale-95"
+                >
+                  <Send size={18} />
+                </button>
+              </div>
+            </form>
+          </>
+        ) : (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-10 animate-in fade-in zoom-in duration-700">
+            <div className="w-24 h-24 bg-red-600/10 rounded-[40px] flex items-center justify-center text-red-500 mb-6 shadow-2xl shadow-red-600/5">
+              <MessageSquare size={48} className="animate-pulse" />
+            </div>
+            <h3 className="text-2xl font-black text-white uppercase tracking-tight mb-2">Central de Mensagens</h3>
+            <p className="text-gray-500 max-w-sm text-sm font-medium leading-relaxed">Selecione um membro ou mentor da elite para iniciar uma conversa estratégica e privada.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default MessagesSection;
