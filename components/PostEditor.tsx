@@ -53,7 +53,7 @@ const PostEditor: React.FC<PostEditorProps> = ({ onPublish }) => {
       <div className="flex gap-4">
         <img 
           src="https://picsum.photos/seed/goncalo/100" 
-          className="w-10 h-10 rounded-xl border border-white/10 shrink-0" 
+          className="w-10 h-10 rounded-full border border-white/10 shrink-0 object-cover" 
           alt="Profile" 
         />
         <div className="flex-1">

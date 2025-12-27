@@ -8,12 +8,21 @@ interface SidebarProps {
   activeSection: Section;
   onSectionChange: (section: Section) => void;
   isMobileOpen: boolean;
+  isSidebarVisible: boolean; // Propriedade para controlar visibilidade no desktop
   toggleMobile: () => void;
   user: User;
   onLogout: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange, isMobileOpen, toggleMobile, user, onLogout }) => {
+const Sidebar: React.FC<SidebarProps> = ({ 
+  activeSection, 
+  onSectionChange, 
+  isMobileOpen, 
+  isSidebarVisible, 
+  toggleMobile, 
+  user, 
+  onLogout 
+}) => {
   return (
     <>
       {/* Mobile Backdrop */}
@@ -26,13 +35,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange, isMob
 
       {/* Sidebar Container */}
       <aside className={`
-        fixed top-0 left-0 h-full w-64 bg-[#0f0f0f] border-r border-white/5 z-50 transition-transform duration-300
+        fixed top-0 left-0 h-full w-64 bg-[#0f0f0f] border-r border-white/5 z-50 transition-all duration-500
         ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}
-        md:translate-x-0
+        ${isSidebarVisible ? 'md:translate-x-0' : 'md:-translate-x-full'}
       `}>
         <div className="flex flex-col h-full">
           {/* Logo - Centered */}
-          <div className="p-6 text-center">
+          <div className="p-6 text-center border-b border-white/5">
             <h1 className="text-xl font-bold bg-gradient-to-r from-red-500 to-red-800 bg-clip-text text-transparent">
               ANGO – PROMPT PD
             </h1>
@@ -40,9 +49,9 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange, isMob
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar">
-            <div className="px-4 pt-2 pb-4 text-center">
-              <span className="text-[11px] font-black uppercase tracking-[0.25em] text-white">Menu Principal</span>
+          <nav className="flex-1 px-4 space-y-1 overflow-y-auto custom-scrollbar pt-6">
+            <div className="px-4 pb-4 text-center">
+              <span className="text-[11px] font-black uppercase tracking-[0.25em] text-white/40">Menu Principal</span>
             </div>
             
             {MENU_ITEMS.map((item) => {
@@ -72,13 +81,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeSection, onSectionChange, isMob
             })}
           </nav>
 
-          {/* User Info Footer - Updated per request */}
+          {/* User Info Footer - Circular Avatar */}
           <div className="p-4 border-t border-white/5 bg-[#0a0a0a]/50">
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3">
                 <img 
                   src={user.avatar} 
-                  className="w-10 h-10 rounded-xl border-2 border-red-600 shadow-lg shadow-red-600/10 shrink-0" 
+                  className="w-10 h-10 rounded-full border-2 border-red-600 shadow-lg shadow-red-600/10 shrink-0 object-cover" 
                   alt={user.name} 
                 />
                 <div className="overflow-hidden">

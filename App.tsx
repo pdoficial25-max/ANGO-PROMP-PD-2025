@@ -9,6 +9,13 @@ import AIChatbot from './components/AIChatbot';
 import ResourcesPage from './components/ResourcesPage';
 import PromptGenerator from './components/PromptGenerator';
 import MessagesSection from './components/MessagesSection';
+import DoubtsPage from './components/DoubtsPage';
+import AnnouncementsPage from './components/AnnouncementsPage';
+import CoursesPage from './components/CoursesPage';
+import EbooksPage from './components/EbooksPage';
+import MentorshipsPage from './components/MentorshipsPage';
+import ResultsPage from './components/ResultsPage';
+import MembersPage from './components/MembersPage';
 import { 
   Menu, 
   Bell, 
@@ -30,7 +37,13 @@ import {
   CheckCircle2,
   AlertCircle,
   Info,
-  X
+  X,
+  Settings,
+  Shield,
+  CreditCard,
+  BellRing,
+  PanelLeftClose,
+  PanelLeftOpen
 } from 'lucide-react';
 
 const INITIAL_USER_DATA: User = {
@@ -76,6 +89,7 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeSection, setActiveSection] = useState<Section>('Feed');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true); // Controle de visibilidade da sidebar no desktop
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [headline] = useState("Transforme ideias em produtos, marcas e vendas com IA.");
@@ -189,6 +203,54 @@ const App: React.FC = () => {
     setPosts([newPost, ...posts]);
   };
 
+  const handleEditPost = (postId: string, content: string) => {
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, content } : p));
+  };
+
+  const handleDeletePost = (postId: string) => {
+    setPosts(prev => prev.filter(p => p.id !== postId));
+  };
+
+  const handleAddComment = (postId: string, content: string) => {
+    const newComment: Comment = {
+      id: Math.random().toString(36).substr(2, 9),
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userAvatar: currentUser.avatar,
+      content,
+      timestamp: Date.now(),
+      reactions: { like: 0 }
+    };
+    setPosts(prev => prev.map(p => 
+      p.id === postId 
+        ? { ...p, comments: [...(p.comments || []), newComment], commentsCount: (p.commentsCount || 0) + 1 } 
+        : p
+    ));
+  };
+
+  const handleEditComment = (postId: string, commentId: string, content: string) => {
+    setPosts(prev => prev.map(p => 
+      p.id === postId 
+        ? { 
+            ...p, 
+            comments: (p.comments || []).map(c => c.id === commentId ? { ...c, content } : c) 
+          } 
+        : p
+    ));
+  };
+
+  const handleDeleteComment = (postId: string, commentId: string) => {
+    setPosts(prev => prev.map(p => 
+      p.id === postId 
+        ? { 
+            ...p, 
+            comments: (p.comments || []).filter(c => c.id !== commentId),
+            commentsCount: Math.max(0, (p.commentsCount || 0) - 1)
+          } 
+        : p
+    ));
+  };
+
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSavingProfile(true);
@@ -208,7 +270,8 @@ const App: React.FC = () => {
     }, 1200);
   };
 
-  const isFullscreen = activeSection === 'PromptGenerator';
+  // Seções em Tela Cheia
+  const isFullscreen = ['PromptGenerator', 'Dúvidas', 'Cursos', 'E-books', 'Mentorias', 'Membros', 'Resultados', 'Configuracoes'].includes(activeSection);
 
   const filteredPosts = posts.filter(post => {
     if (feedFilter === 'all') return true;
@@ -229,7 +292,7 @@ const App: React.FC = () => {
     switch(activeSection) {
       case 'Feed':
         return (
-          <div className="flex flex-col gap-8 max-w-4xl mx-auto w-full px-4">
+          <div className="flex flex-col gap-8 max-w-4xl mx-auto w-full px-4 pt-2">
             <header className="mb-8 text-center">
               <h2 className="text-2xl md:text-3xl lg:text-4xl font-black mb-3 tracking-tight text-red-600 uppercase leading-tight">
                 BEM-VINDO À PLATAFORMA <br /> ANGO – PROMPT PD
@@ -251,6 +314,11 @@ const App: React.FC = () => {
                   currentUserId={currentUser.id}
                   isFollowing={currentUser.followingIds.includes(post.userId)}
                   onView={() => handleViewPost(post.id)}
+                  onEditPost={(content) => handleEditPost(post.id, content)}
+                  onDeletePost={() => handleDeletePost(post.id)}
+                  onAddComment={(content) => handleAddComment(post.id, content)}
+                  onEditComment={(cid, content) => handleEditComment(post.id, cid, content)}
+                  onDeleteComment={(cid) => handleDeleteComment(post.id, cid)}
                   onMessageUser={() => {
                     setTargetChatUserId(post.userId);
                     setActiveSection('Mensagens');
@@ -266,6 +334,53 @@ const App: React.FC = () => {
         return <PromptGenerator />;
       case 'Recursos':
         return <ResourcesPage onNavigate={setActiveSection} />;
+      case 'Dúvidas':
+        return <DoubtsPage onNavigate={setActiveSection} />;
+      case 'Anúncios':
+        return <AnnouncementsPage />;
+      case 'Cursos':
+        return <CoursesPage />;
+      case 'E-books':
+        return <EbooksPage />;
+      case 'Mentorias':
+        return <MentorshipsPage />;
+      case 'Resultados':
+        return <ResultsPage />;
+      case 'Membros':
+        return <MembersPage />;
+      case 'Configuracoes':
+        return (
+          <div className="max-w-4xl mx-auto w-full px-4 pt-4 pb-12 animate-in fade-in slide-in-from-top-4 duration-700">
+            <div className="text-center mb-16">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-red-600/10 border border-red-500/20 rounded-full text-red-500 text-[10px] font-black uppercase tracking-[0.25em] mb-4">
+                <Settings size={14} /> Painel de Controle
+              </div>
+              <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter mb-4">Configurações</h2>
+              <p className="text-gray-500 max-w-xl mx-auto font-medium text-sm md:text-base">
+                Gerencie as preferências da sua conta, segurança e notificações da plataforma de elite.
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+              {[
+                { icon: <Shield className="text-red-500" />, title: "Segurança", desc: "Alterar senha e autenticação em duas etapas." },
+                { icon: <BellRing className="text-blue-500" />, title: "Notificações", desc: "Escolha quais alertas deseja receber por e-mail." },
+                { icon: <CreditCard className="text-green-500" />, title: "Faturação", desc: "Gerencie o seu plano Premium e histórico de pagamentos." },
+                { icon: <UserIcon className="text-purple-500" />, title: "Privacidade", desc: "Controle quem pode ver o seu perfil e atividade." }
+              ].map((item, idx) => (
+                <button key={idx} className="group flex items-start gap-6 p-8 bg-[#141414] border border-white/5 rounded-[40px] text-left hover:border-red-600/30 transition-all shadow-2xl">
+                  <div className="w-14 h-14 bg-white/5 rounded-2xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                    {React.cloneElement(item.icon as React.ReactElement, { size: 28 })}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-white uppercase tracking-tight mb-2">{item.title}</h3>
+                    <p className="text-gray-500 text-xs leading-relaxed font-medium">{item.desc}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
       case 'Meu Perfil':
         return (
           <div className="max-w-4xl mx-auto w-full px-4 py-6 md:py-10 animate-in fade-in slide-in-from-top-4 duration-700">
@@ -283,7 +398,7 @@ const App: React.FC = () => {
               <div className="flex flex-col items-center">
                 <div 
                   onClick={() => fileInputRef.current?.click()}
-                  className="group relative w-28 h-28 md:w-36 md:h-36 rounded-[32px] md:rounded-[44px] cursor-pointer overflow-hidden border-4 border-red-600/20 hover:border-red-600 transition-all shadow-2xl shadow-red-600/10"
+                  className="group relative w-28 h-28 md:w-36 md:h-36 rounded-full cursor-pointer overflow-hidden border-4 border-red-600/20 hover:border-red-600 transition-all shadow-2xl shadow-red-600/10"
                 >
                   <img src={profileForm.avatar} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" alt="Avatar" />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity">
@@ -312,37 +427,27 @@ const App: React.FC = () => {
                 <div className="absolute top-0 right-0 w-64 h-64 bg-red-600/5 blur-[100px] rounded-full pointer-events-none"></div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 relative z-10">
-                  {/* Nome Completo - Alargado (Span 2) */}
                   <div className="md:col-span-2 space-y-2.5">
                     <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest px-2"><UserIcon size={14} className="text-red-600" /> Nome Completo</label>
                     <input type="text" placeholder="Ex.: Jonce João Pedro Domingos" value={profileForm.name} onChange={(e) => setProfileForm({...profileForm, name: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-xs text-white focus:border-red-600/50 outline-none transition-all" />
                   </div>
-
-                  {/* Bio - Já alargado (Span 2) */}
                   <div className="md:col-span-2 space-y-2.5">
                     <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest px-2"><AlignLeft size={14} className="text-red-600" /> Bio</label>
                     <textarea value={profileForm.bio} onChange={(e) => setProfileForm({...profileForm, bio: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-xs text-white focus:border-red-600/50 outline-none transition-all min-h-[120px] resize-none" />
                   </div>
-
-                  {/* Cidade */}
                   <div className="space-y-2.5">
                     <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest px-2"><MapPin size={14} className="text-red-600" /> Cidade</label>
                     <input type="text" placeholder="Ex.: Malanje" value={profileForm.city} onChange={(e) => setProfileForm({...profileForm, city: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-xs text-white focus:border-red-600/50 outline-none transition-all" />
                   </div>
-
-                  {/* Área de Actuação */}
                   <div className="space-y-2.5">
                     <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest px-2"><Briefcase size={14} className="text-red-600" /> Área de Actuação</label>
                     <input type="text" placeholder="Ex.: Web Design" value={profileForm.area} onChange={(e) => setProfileForm({...profileForm, area: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-xs text-white focus:border-red-600/50 outline-none transition-all" />
                   </div>
-
-                  {/* E-mail - Abaixo de Cidade e Alargado (Span 2) */}
                   <div className="md:col-span-2 space-y-2.5">
                     <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-widest px-2"><Mail size={14} className="text-red-600" /> E-mail</label>
                     <input type="email" placeholder="Ex.: angopromport@gmail.com" value={profileForm.email} onChange={(e) => setProfileForm({...profileForm, email: e.target.value})} className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-3.5 text-xs text-white focus:border-red-600/50 outline-none transition-all" />
                   </div>
                 </div>
-                
                 <div className="mt-12 flex justify-center">
                   <button type="submit" disabled={isSavingProfile} className="w-full md:w-auto min-w-[280px] bg-red-600 hover:bg-red-700 text-white font-black py-4 px-10 rounded-2xl shadow-2xl transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px] active:scale-95 disabled:opacity-50">
                     {isSavingProfile ? <><Loader2 className="animate-spin" size={18} /> Guardando...</> : <><Check size={18} /> Guardar Alterações</>}
@@ -371,37 +476,51 @@ const App: React.FC = () => {
           activeSection={activeSection} 
           onSectionChange={setActiveSection} 
           isMobileOpen={isMobileSidebarOpen}
+          isSidebarVisible={isSidebarVisible}
           toggleMobile={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
           user={currentUser}
           onLogout={handleLogout}
         />
       )}
 
-      <main className={`${!isFullscreen ? 'md:ml-64' : ''} min-h-screen flex flex-col flex-1 transition-all duration-500 relative`}>
+      <main className={`
+        ${!isFullscreen && isSidebarVisible ? 'md:ml-64' : 'md:ml-0'} 
+        min-h-screen flex flex-col flex-1 transition-all duration-500 relative
+      `}>
         {isFullscreen && (
           <div className="fixed top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-600/5 blur-[120px] rounded-full pointer-events-none"></div>
         )}
 
-        <header className={`sticky top-0 z-40 h-16 md:h-20 flex items-center justify-between px-4 md:px-8 border-b border-white/5 ${isFullscreen ? 'bg-transparent border-transparent' : 'bg-[#0a0a0a]/80 backdrop-blur-xl'}`}>
+        <header className={`sticky top-0 z-40 h-16 md:h-20 flex items-center justify-between px-4 md:px-8 border-b border-white/5 ${isFullscreen ? 'bg-[#0a0a0a]/80 backdrop-blur-xl border-transparent' : 'bg-[#0a0a0a]/80 backdrop-blur-xl'}`}>
           <div className="flex items-center gap-4">
             {!isFullscreen ? (
               <>
+                {/* Botão para Mobile */}
                 <button onClick={() => setIsMobileSidebarOpen(true)} className="md:hidden text-gray-400 p-2"><Menu size={20} /></button>
+                
+                {/* Botão Toggle Sidebar Desktop */}
+                <button 
+                  onClick={() => setIsSidebarVisible(!isSidebarVisible)} 
+                  className="hidden md:flex p-2.5 bg-white/5 border border-white/5 rounded-xl text-gray-400 hover:text-white hover:bg-red-600/10 hover:border-red-600/20 transition-all"
+                  title={isSidebarVisible ? "Ocultar Menu" : "Mostrar Menu"}
+                >
+                  {isSidebarVisible ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+                </button>
+
                 <div className="hidden lg:flex items-center gap-3 px-5 py-2.5 bg-white/5 rounded-2xl border border-white/5 w-64">
                   <Search size={16} className="text-gray-500" />
                   <input type="text" placeholder="Pesquisar..." className="bg-transparent border-none text-sm w-full text-white outline-none" />
                 </div>
               </>
             ) : (
-              <button onClick={() => setActiveSection('Feed')} className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 text-gray-300 transition-all active:scale-95 group">
+              <button onClick={() => setActiveSection('Feed')} className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-xl border border-red-500/20 text-white transition-all active:scale-95 group shadow-lg shadow-red-600/20">
                 <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Voltar ao Dashboard</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Voltar ao Menu Principal</span>
               </button>
             )}
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Sistema de Notificações */}
             <div className="relative" ref={notificationsRef}>
               <button 
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} 
@@ -445,9 +564,6 @@ const App: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <div className="p-4 bg-white/5 text-center">
-                    <button className="text-[9px] font-black text-gray-500 uppercase tracking-widest hover:text-white">Ver histórico completo</button>
-                  </div>
                 </div>
               )}
             </div>
@@ -460,25 +576,50 @@ const App: React.FC = () => {
             <div className="h-8 w-[1px] bg-white/5 mx-1 md:mx-2"></div>
 
             <div className="relative" ref={profileMenuRef}>
-              <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="flex items-center gap-3 p-1 pl-1 pr-4 bg-white/5 rounded-2xl border border-white/5">
-                <img src={currentUser.avatar} className="w-8 h-8 md:w-10 md:h-10 rounded-xl border-2 border-red-600 object-cover" alt="User" />
+              <button onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} className="flex items-center gap-3 p-1 pl-1 pr-4 bg-white/5 rounded-2xl border border-white/5 transition-all hover:bg-white/10 active:scale-95">
+                <img src={currentUser.avatar} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-red-600 object-cover" alt="User" />
                 <ChevronDown size={12} className={`text-gray-500 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
               </button>
               {isProfileMenuOpen && (
-                <div className="absolute top-full right-0 mt-3 w-64 bg-[#0f0f0f] border border-white/10 rounded-[28px] shadow-2xl overflow-hidden py-3 backdrop-blur-2xl">
-                   <button onClick={() => { setActiveSection('Meu Perfil'); setIsProfileMenuOpen(false); }} className="w-full flex items-center gap-4 px-5 py-3.5 text-xs font-black text-gray-400 hover:text-white hover:bg-red-600 transition-all uppercase tracking-widest">
-                     <UserCircle size={18} /> Meu Perfil
-                   </button>
-                   <button onClick={handleLogout} className="w-full flex items-center gap-4 px-5 py-3.5 text-xs font-black text-red-500 hover:bg-red-500/10 transition-all uppercase tracking-widest">
-                     <LogOut size={18} /> Sair
-                   </button>
+                <div className="absolute top-full right-0 mt-3 w-72 bg-[#0f0f0f] border border-white/10 rounded-[32px] shadow-2xl overflow-hidden backdrop-blur-2xl animate-in fade-in slide-in-from-top-2">
+                   {/* User Profile Header in Dropdown */}
+                   <div className="p-6 border-b border-white/5 flex flex-col items-center text-center">
+                     <img src={currentUser.avatar} className="w-14 h-14 rounded-full border-2 border-red-600 mb-3 shadow-lg object-cover" alt="" />
+                     <h4 className="text-[12px] font-black text-white uppercase tracking-tight">{currentUser.name}</h4>
+                     <p className="text-[9px] text-gray-500 font-bold lowercase tracking-wide mt-0.5">{currentUser.email}</p>
+                     <span className="mt-3 px-3 py-1 bg-red-600/10 border border-red-600/20 text-red-500 text-[8px] font-black uppercase tracking-widest rounded-lg">{currentUser.role}</span>
+                   </div>
+
+                   <div className="py-2">
+                     <button 
+                      onClick={() => { setActiveSection('Meu Perfil'); setIsProfileMenuOpen(false); }} 
+                      className="w-full flex items-center gap-4 px-6 py-4 text-[10px] font-black text-gray-400 hover:text-white hover:bg-white/5 transition-all uppercase tracking-[0.15em]"
+                     >
+                       <UserCircle size={18} className="text-red-600" /> Meu Perfil
+                     </button>
+                     <button 
+                      onClick={() => { setActiveSection('Configuracoes'); setIsProfileMenuOpen(false); }} 
+                      className="w-full flex items-center gap-4 px-6 py-4 text-[10px] font-black text-gray-400 hover:text-white hover:bg-white/5 transition-all uppercase tracking-[0.15em]"
+                     >
+                       <Settings size={18} className="text-gray-500" /> Configurações
+                     </button>
+                   </div>
+                   
+                   <div className="p-2 pt-0">
+                     <button 
+                      onClick={handleLogout} 
+                      className="w-full flex items-center gap-4 px-6 py-4 text-[10px] font-black text-red-500 hover:bg-red-500/10 transition-all uppercase tracking-[0.15em] rounded-2xl"
+                     >
+                       <LogOut size={18} /> Sair
+                     </button>
+                   </div>
                 </div>
               )}
             </div>
           </div>
         </header>
 
-        <section className={`flex-1 py-6 md:py-8`}>
+        <section className={`flex-1 pt-4 pb-12`}>
           {renderContent()}
         </section>
       </main>
